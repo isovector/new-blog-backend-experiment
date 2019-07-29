@@ -23,7 +23,7 @@ data Route = Index
            | Post Text
            | Css Text
 
-data SiteConfig = SiteConfig { siteTitle :: String } 
+data SiteConfig = SiteConfig { siteTitle :: String }
 
 data PageConfig = PageConfig { pageTitle :: Maybe String
                              , pageMtime :: Maybe UTCTime
@@ -59,17 +59,17 @@ main = shakeArgs shakeOptions $ do
             Nothing -> b
             Just x -> x : b
 
-    pages <- liftIO $ foldr strip [] <$> (listDirectory "pages") 
+    pages <- liftIO $ foldr strip [] <$> (listDirectory "pages")
     liftIO $ print $ pages
     posts <- liftIO $ foldr strip [] <$> (listDirectory "posts")
-    
+
     want $ map (\page -> site </> "pages" </> page <.> "html") pages
     want $ map (\post -> site </> "posts" </> post <.> "html") posts
     want [site </> "index" <.> "html"]
-    
+
     site </> "index" <.> "html" %> \out -> do
         need [indexTemplate, frameTemplate]
-        posts' <- liftIO $ mapM (\post -> do 
+        posts' <- liftIO $ mapM (\post -> do
             time <- getModificationTime $ "posts" </> post <.> "org"
             return (post, time)
             ) posts
@@ -79,17 +79,17 @@ main = shakeArgs shakeOptions $ do
                                     }) pages body render
         liftIO $ TLIO.writeFile out $ renderHtml html
 
-    [ site </> "pages" </> "*.html", site </> "posts" </> "*.html"] |%> \out -> do 
+    [ site </> "pages" </> "*.html", site </> "posts" </> "*.html"] |%> \out -> do
         let base = dropExtension $ dropDirectory1 out
         let inp = base <.> "org"
 
         need [inp, frameTemplate]
-        liftIO $ do 
+        liftIO $ do
             mtime <- getModificationTime inp
             org <- TIO.readFile inp
-            let result = runPure $ do 
-                doc <- readOrg def org
-                writeHtml5 def doc
+            let result = runPure $ do
+                  doc <- readOrg def org
+                  writeHtml5 def doc
             html <- handleError result
             TLIO.writeFile out $ renderHtml $ frame (PageConfig { pageTitle = Just $ dropDirectory1 base
                                                                 , pageMtime = Just mtime
